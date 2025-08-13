@@ -11,22 +11,22 @@ except ImportError:
     sys.exit(1)
 
 
-def convert_pngs_to_webp(directory: Path, overwrite: bool = False, quality: Optional[int] = None,
+def convert_images_to_webp(directory: Path, overwrite: bool = False, quality: Optional[int] = None,
                          lossless: bool = True, max_width: Optional[int] = None, max_height: Optional[int] = None):
-    png_files = [p for p in directory.iterdir() if p.is_file() and p.suffix.lower() == ".png"]
-    if not png_files:
-        print("Keine .png Dateien im aktuellen Ordner gefunden.")
+    image_files = [p for p in directory.iterdir() if p.is_file() and p.suffix.lower() in [".png", ".jpg", ".jpeg"]]
+    if not image_files:
+        print("Keine .png, .jpg oder .jpeg Dateien im aktuellen Ordner gefunden.")
         return
 
     converted = 0
-    for png_path in png_files:
-        webp_path = png_path.with_suffix(".webp")
+    for image_path in image_files:
+        webp_path = image_path.with_suffix(".webp")
         if webp_path.exists() and not overwrite:
             print(f"⚠️  Überspringe (bereits vorhanden): {webp_path.name}")
             continue
 
         try:
-            with Image.open(png_path) as im:
+            with Image.open(image_path) as im:
                 # ggf. verkleinern (schont stark die Dateigröße)
                 if max_width or max_height:
                     im.thumbnail((max_width or im.width, max_height or im.height), Image.LANCZOS)
@@ -42,10 +42,10 @@ def convert_pngs_to_webp(directory: Path, overwrite: bool = False, quality: Opti
                     save_kwargs.update(quality=quality)
                 im.save(webp_path, "WEBP", **save_kwargs)
 
-            print(f"✅ {png_path.name} → {webp_path.name}")
+            print(f"✅ {image_path.name} → {webp_path.name}")
             converted += 1
         except Exception as e:
-            print(f"❌ Fehler bei {png_path.name}: {e}")
+            print(f"❌ Fehler bei {image_path.name}: {e}")
 
     print(f"Fertig. {converted} Datei(en) konvertiert.")
 
@@ -117,7 +117,7 @@ def resize_webps_to_square(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Konvertiert alle .png im aktuellen Ordner zu .webp.")
+    parser = argparse.ArgumentParser(description="Konvertiert alle .png, .jpg und .jpeg im aktuellen Ordner zu .webp.")
     parser.add_argument("-o", "--overwrite", action="store_true", help="Vorhandene .webp-Dateien überschreiben.")
     parser.add_argument("--lossy", action="store_true", help="Verlustbehaftet statt lossless speichern.")
     parser.add_argument("-q", "--quality", type=int, help="Qualität 0-100 (nur relevant mit --lossy).")
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     parser.add_argument("--square-size", type=int, default=1200, help="Zielgröße für quadratisches Canvas (Standard 1200).")
     args = parser.parse_args()
 
-    convert_pngs_to_webp(
+    convert_images_to_webp(
         Path("."),
         overwrite=args.overwrite,
         quality=args.quality if args.lossy else None,
